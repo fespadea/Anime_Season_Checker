@@ -1,3 +1,4 @@
 *.xml
 mal_cache_*.json
 missing_seasons_report_*.txt
+group_missing_seasons_report.txt

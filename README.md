@@ -68,3 +68,21 @@ At the top of the file, you will find a "How to Read This Report" preamble expla
 ## Notes
 * **Ongoing Shows:** The script smartly evaluates ongoing shows by assuming a minimum episode count of `2`. This ensures that a currently airing standard-length episode will pass the `> 24 Mins` filter.
 * **Rate Limiting:** The script has a built-in 1-second delay between pagination requests to remain polite to the MyAnimeList API.
+
+## Bonus: Group Missing Seasons Aggregator
+
+Want to find a retro anime to watch with your friends, but need to make sure *nobody* has seen it yet? The repository includes a bonus script: `group_seasons_aggregator.py`.
+
+This script scans the directory for all individual user reports and calculates the **intersection** of missing seasons. It outputs a master list of seasons where literally no one in the group watched a qualifying show.
+
+### How to Use
+
+1. Run the main `mal_missing_seasons.py` script for each friend in your group.
+2. Ensure all of their `missing_seasons_report_<username>.txt` files are located in the same directory as the aggregator script.
+3. Run the aggregator from your terminal:
+   ```bash
+   python group_seasons_aggregator.py
+   ```
+4. Open the newly generated `group_missing_seasons_report.txt` to see your group's shared blind spots!
+
+*Note: You can safely rerun this script anytime you add a new friend's report to the folder. It automatically ignores its own output file.*
