@@ -2,6 +2,7 @@ import argparse
 import requests
 import json
 import os
+import sys
 import time
 from datetime import datetime
 from itertools import product
@@ -37,6 +38,11 @@ def fetch_user_list(username, client_id, force_update):
         print(f"Loading cached data for {username}...")
         with open(cache_file, 'r', encoding='utf-8') as f:
             return json.load(f)
+
+    # If we reach this point, we need to make API calls. 
+    # Check if the user actually provided a client_id.
+    if not client_id:
+        sys.exit(f"Error: No local cache found for '{username}' (or --force_update was used). You must provide a client_id to fetch data from the MyAnimeList API.")
 
     print(f"Fetching data for {username} from MyAnimeList API...")
     headers = {'X-MAL-CLIENT-ID': client_id}
@@ -113,7 +119,7 @@ def format_missing_ranges(missing_vals, min_watched_val):
 def main():
     parser = argparse.ArgumentParser(description="Find missing anime seasons for a MAL user.")
     parser.add_argument("username", help="MyAnimeList Username")
-    parser.add_argument("client_id", help="MyAnimeList API Client ID")
+    parser.add_argument("client_id", nargs='?', default=None, help="MyAnimeList API Client ID (optional if cache already exists)")
     parser.add_argument("--force_update", action="store_true", help="Ignore cache and fetch fresh data")
     args = parser.parse_args()
 
@@ -164,10 +170,10 @@ def main():
         "All Types": [],
         "No CM/PV/Music/Other": ['cm', 'pv', 'music', 'other', 'unknown'],
         "No Specials (and above)": ['cm', 'pv', 'music', 'other', 'unknown', 'special'],
-        "No OVA (and above)": ['cm', 'pv', 'music', 'other', 'unknown', 'ova'],
-        "No Movies (and above)": ['cm', 'pv', 'music', 'other', 'unknown', 'ova', 'movie'],
+        "No OVA (and above)": ['cm', 'pv', 'music', 'other', 'unknown', 'special', 'ova'],
+        "No Movies (and above)": ['cm', 'pv', 'music', 'other', 'unknown', 'special', 'ova', 'movie'],
         "No ONAs (Keep Movies)": ['cm', 'pv', 'music', 'other', 'unknown', 'special', 'ova', 'ona'],
-        "No ONAs (and above)": ['cm', 'pv', 'music', 'other', 'unknown', 'ova', 'movie', 'ona']
+        "No ONAs (and above)": ['cm', 'pv', 'music', 'other', 'unknown', 'special', 'ova', 'movie', 'ona']
     }
 
     runtime_filters = {
@@ -178,12 +184,45 @@ def main():
         "> 240 Mins": 240
     }
 
+    preamble_text = """HOW TO READ THIS REPORT:
+This file calculates the anime seasons (e.g., Winter 2001, Spring 2006) in
+which you have NOT watched anything that originally aired during that time.
+Because people have different definitions of what 'counts' as having watched
+something from a given season, this report provides multiple lists based on
+different combinations of filters.
+
+THE FILTERS:
+1. Status: Which of your lists are we looking at?
+   - Base: Includes Completed, Watching, On Hold, and Dropped. (Never counts
+     Plan to Watch).
+   - No Dropped: Excludes dropped shows.
+   - No Dropped & No Hold: Excludes dropped and on-hold shows.
+   - Completed Only: Strictly counts shows you have fully finished.
+
+2. Media Type: Which types of anime entries 'count'?
+   - All Types: Includes everything (TV, Movies, ONAs, OVAs, Specials, etc.).
+   - Exclusions: Drops categories step-by-step. For example, 'No Movies (and
+     above)' excludes Movies, OVAs, Specials, CMs, PVs, Music, and Others.
+
+3. Runtime: How long does the total entry need to be to 'count'?
+   - Any Runtime: A 2-minute short counts just as much as a 100-episode series.
+   - > 24 Mins: The total runtime (episodes * duration) must be over 24 minutes.
+   - Stricter filters progress up to > 240 Mins.
+
+RESULTS:
+(Seasons are listed from newest to oldest. Contiguous missing seasons are
+grouped into ranges.)
+"""
+
     output_filename = f"missing_seasons_report_{args.username}.txt"
     print(f"Processing ablations and writing to {output_filename}...")
     
     with open(output_filename, 'w', encoding='utf-8') as f:
+        # Write the explanatory header for friends/other users
         f.write(f"MISSING SEASONS REPORT FOR: {args.username}\n")
         f.write(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write("="*80 + "\n\n")
+        f.write(preamble_text)
         f.write("="*80 + "\n\n")
 
         # Iterate through every combination of ablations
