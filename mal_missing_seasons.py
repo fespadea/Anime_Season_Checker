@@ -163,8 +163,10 @@ def main():
     media_filters = {
         "All Types": [],
         "No CM/PV/Music/Other": ['cm', 'pv', 'music', 'other', 'unknown'],
+        "No Specials (and above)": ['cm', 'pv', 'music', 'other', 'unknown', 'special'],
         "No OVA (and above)": ['cm', 'pv', 'music', 'other', 'unknown', 'ova'],
         "No Movies (and above)": ['cm', 'pv', 'music', 'other', 'unknown', 'ova', 'movie'],
+        "No ONAs (Keep Movies)": ['cm', 'pv', 'music', 'other', 'unknown', 'special', 'ova', 'ona'],
         "No ONAs (and above)": ['cm', 'pv', 'music', 'other', 'unknown', 'ova', 'movie', 'ona']
     }
 
